@@ -4,7 +4,7 @@ A Jellyfin music player built with Electron and React. Connects to your Jellyfin
 
 [![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/xceekaay)
 
-<img width="1919" height="1078" alt="Screenshot" src="https://github.com/user-attachments/assets/30e444e8-4d99-4ba0-9f7a-5cfe2ae4b189" />
+<img width="1919" height="1078" alt="Screenshot" src="https://github.com/user-attachments/assets/caa1a53c-6216-49e2-98d2-902d3ae89b61" />
 
 ## Features
 
