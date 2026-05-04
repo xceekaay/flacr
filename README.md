@@ -10,13 +10,14 @@ A Jellyfin music player built with Electron and React. Connects to your Jellyfin
 
 - Browse by songs, albums, artists, genres, playlists, and favorites
 - Full playback controls — shuffle, repeat, crossfade, gapless playback, volume normalization, sleep timer
+- 10-band Equalizer with built-in presets
 - Queue panel with drag-to-reorder
-- Full-screen Now Playing view
+- Full-screen Now Playing view with synchronized lyrics panel
 - Mini player window
 - Playlist management — create, rename, delete, reorder tracks, and upload cover art
 - System tray controls and global media keys
 - Discord Rich Presence
-- Dark theme with a customizable accent color
+- Dark theme with smooth animations and customizable accent color
 
 ## Download
 
