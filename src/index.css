@@ -1,0 +1,206 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+button, [role="button"] { outline: none !important; }
+
+/* ── Theme tokens ────────────────────────────────────────────────────────────
+   Light mode is the :root default; dark mode overrides via html.dark
+   (set by App.jsx) AND by the prefers-color-scheme media query (fallback). */
+:root {
+  /* Accent (same in both themes) */
+  --accent:        #a855f7;
+  --accent-hover:  #9333ea;
+  --accent-dim:    rgba(168,85,247,0.15);
+  --accent-glow:   rgba(168,85,247,0.22);
+  --accent-border: rgba(168,85,247,0.28);
+  --transition:    0.22s cubic-bezier(0.4,0,0.2,1);
+
+  /* Light theme surface/text */
+  --bg-body:              #f4f4f5;
+  --text-body:            #18181b;
+  --scrollbar-thumb:      rgba(0,0,0,0.12);
+  --scrollbar-thumb-hover:rgba(0,0,0,0.22);
+  --option-bg:            #e4e4e7;
+  --option-color:         #18181b;
+}
+
+/* Dark theme — JS sets html.dark; media query is the no-JS / pre-hydration fallback */
+html.dark {
+  --bg-body:              #080808;
+  --text-body:            #ffffff;
+  --scrollbar-thumb:      rgba(255,255,255,0.08);
+  --scrollbar-thumb-hover:rgba(255,255,255,0.18);
+  --option-bg:            #1a1a1a;
+  --option-color:         #e0e0e0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-body:              #080808;
+    --text-body:            #ffffff;
+    --scrollbar-thumb:      rgba(255,255,255,0.08);
+    --scrollbar-thumb-hover:rgba(255,255,255,0.18);
+    --option-bg:            #1a1a1a;
+    --option-color:         #e0e0e0;
+  }
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  background: var(--bg-body);
+  color: var(--text-body);
+  overflow: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+
+/* Range inputs */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 99px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.5);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 4px var(--accent-dim), 0 1px 6px rgba(0,0,0,0.5);
+}
+
+/* Select option */
+option { background: var(--option-bg); color: var(--option-color); }
+
+/* Animations off */
+.no-animations *, .no-animations *::before, .no-animations *::after {
+  transition-duration: 0ms !important;
+  animation-duration: 0ms !important;
+}
+
+/* ── Keyframes ─────────────────────────────────────────────────────────────── */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.55 }
+  50%       { opacity: 0.85 }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+@keyframes fadeDown {
+  from { opacity: 1; transform: translateY(0) }
+  to   { opacity: 0; transform: translateY(10px) }
+}
+@keyframes pageFadeOut {
+  from { opacity: 1; transform: translateY(0) }
+  to   { opacity: 0; transform: translateY(-8px) }
+}
+@keyframes fadeIn {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.94) }
+  to   { opacity: 1; transform: scale(1) }
+}
+@keyframes scaleOut {
+  from { opacity: 1; transform: scale(1) }
+  to   { opacity: 0; transform: scale(0.94) }
+}
+@keyframes toastIn {
+  from { opacity:0; transform: translateY(10px) scale(0.94) }
+  to   { opacity:1; transform: translateY(0) scale(1) }
+}
+@keyframes spin {
+  from { transform: rotate(0deg) }
+  to   { transform: rotate(360deg) }
+}
+@keyframes ticker {
+  0%   { transform: translateX(0) }
+  100% { transform: translateX(-50%) }
+}
+@keyframes playPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow) }
+  50%       { box-shadow: 0 0 0 10px transparent }
+}
+
+/* ── Marquee ticker for long track names ──────────────────────────────────── */
+.ticker-wrap {
+  overflow: hidden;
+  white-space: nowrap;
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+.ticker-inner {
+  display: inline-block;
+  animation: ticker 14s linear infinite;
+}
+.ticker-inner:hover { animation-play-state: paused; }
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0 }
+  to   { transform: translateX(0);    opacity: 1 }
+}
+@keyframes slideOutRight {
+  from { transform: translateX(0);    opacity: 1 }
+  to   { transform: translateX(100%); opacity: 0 }
+}
+@keyframes slideInOverlay {
+  from { opacity: 0; transform: scale(0.97) translateY(12px) }
+  to   { opacity: 1; transform: scale(1)    translateY(0) }
+}
+@keyframes slideOutOverlay {
+  from { opacity: 1; transform: scale(1)    translateY(0) }
+  to   { opacity: 0; transform: scale(0.97) translateY(12px) }
+}
+
+/* Accent color change transitions */
+.accent-transition {
+  transition: color 0.25s ease, background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+@keyframes artChange {
+  from { opacity: 0; transform: scale(0.92) }
+  to   { opacity: 1; transform: scale(1) }
+}
+
+@keyframes volumePopIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.92) }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0)   scale(1) }
+}
+
+@keyframes volumePopOut {
+  from { opacity: 1; transform: translateX(-50%) translateY(0)   scale(1) }
+  to   { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.92) }
+}
+
+@keyframes menuIn {
+  from { opacity: 0; transform: scale(0.94) translateY(-4px) }
+  to   { opacity: 1; transform: scale(1)    translateY(0) }
+}
+@keyframes menuOut {
+  from { opacity: 1; transform: scale(1)    translateY(0) }
+  to   { opacity: 0; transform: scale(0.94) translateY(-4px) }
+}
+
+@keyframes lyric-ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
