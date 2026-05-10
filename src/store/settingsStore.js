@@ -14,6 +14,7 @@ const defaults = {
   accentColor:             '#a855f7',
   animations:              true,
   closeBehavior:           'tray',   // 'tray' | 'quit'
+  streamQuality:           'auto',
   discordRPC:              false,
   updateChecker:           true,
   autoUpdate:              false,
@@ -37,11 +38,10 @@ const useSettingsStore = create((set, get) => {
   }
 })
 
-// Called once on app start: if localStorage is empty, restore from the settings.json
-// file in userData — this preserves settings across fresh installs/reinstalls.
+// Called once on app start: load settings from the settings.json file in userData.
+// This ensures settings are synced across different environments (dev/prod)
+// and preserved through updates/reinstalls.
 export async function hydrateSettingsFromFile() {
-  const ls = localStorage.getItem(STORAGE_KEY)
-  if (ls && ls !== '{}') return
   try {
     const saved = await window.electronAPI?.loadSettings?.()
     if (!saved || typeof saved !== 'object') return

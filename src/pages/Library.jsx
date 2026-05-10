@@ -19,7 +19,7 @@ import { imgUrl, verifySession, fetchAllSongs, fetchAlbums, fetchArtists,
   fetchAlbumSongs, fetchArtistSongs, toggleFavoriteApi,
   fetchGenres, fetchGenreSongs, fetchPlaylists, fetchPlaylistSongs,
   createPlaylist, addToPlaylist, removeFromPlaylist, deletePlaylist,
-  fetchRecentlyPlayed, fetchTopItems, fetchCurrentUser } from '../utils/api'
+  fetchRecentlyPlayed, fetchTopItems, fetchCurrentUser, logoutSession } from '../utils/api'
 import { sortSongs, sortAlbums, sortByName } from '../utils/sort'
 import { plural } from '../utils/format'
 import { useSortPrefs } from '../hooks/useSortPrefs'
@@ -669,7 +669,10 @@ function Library({ session: initialSession }) {
       if (e.code === 'ArrowLeft')  { e.preventDefault(); prev() }
       if (e.key  === 'f' || e.key === 'F') {
         if (showNowPlayingRef.current) closeNowPlayingRef.current()
-        else if (queue.length > 0 && currentIndex >= 0) setShowNowPlaying(true)
+        else {
+          const { queue: q, currentIndex: ci } = usePlayerStore.getState()
+          if (q.length > 0 && ci >= 0) setShowNowPlaying(true)
+        }
       }
       if (e.key  === 'q' || e.key === 'Q') {
         if (showQueueRef2.current) closeQueueRef.current()
@@ -699,6 +702,7 @@ function Library({ session: initialSession }) {
       if (status === 'auth') {
         localStorage.removeItem(STORAGE_KEY)
         window.electronAPI?.clearSession?.()
+        window.electronAPI?.saveServers?.({ activeServerId: null, servers: [] })
         window.location.reload()
         return
       }
@@ -1188,6 +1192,7 @@ function Library({ session: initialSession }) {
                   'flacr_settings','flacr_sort_prefs','flacr:queueWidth','flacr:npQueueWidth','flacr:sidebarWidth']
                 FLACR_KEYS.forEach(k => localStorage.removeItem(k))
                 sessionStorage.removeItem('flacr_session')
+                await logoutSession(sessionRef.current)
                 if (window.electronAPI?.clearSession) await window.electronAPI.clearSession()
                 if (window.electronAPI?.saveServers) await window.electronAPI.saveServers({ activeServerId: null, servers: [] })
                 window.location.reload()

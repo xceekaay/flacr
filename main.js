@@ -552,6 +552,7 @@ function createWindow() {
     if (rpcRetryTimer) { clearTimeout(rpcRetryTimer); rpcRetryTimer = null }
     clearDiscordPresence()
     if (rpc) { try { rpc.destroy().catch(() => {}) } catch {} rpc = null }
+
   })
 }
 

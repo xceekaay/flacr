@@ -107,6 +107,83 @@ function Connect({ onConnect, onAddServer }) {
     </div>
   )
 
+  const formContents = (
+    <>
+      <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+        <span style={{ fontSize: '2.8rem', fontWeight: 800, letterSpacing: '-2px', color: '#fff' }}>flacr</span>
+        <span style={{ fontSize: '2.8rem', fontWeight: 800, color: '#a855f7' }}>.</span>
+      </div>
+      <p style={{ textAlign: 'center', color: '#888', fontSize: '0.9rem', marginBottom: '36px' }}>
+        Connect to your Jellyfin server
+      </p>
+
+      <div style={{ marginBottom: '16px' }}>
+        {label('Nickname (optional)')}
+        <input type="text" placeholder="Home Server"
+          value={serverName} onChange={e => setServerName(e.target.value)}
+          style={{ ...inputStyle, width: '100%' }}
+        />
+      </div>
+
+      <div style={{ marginBottom: '16px' }}>
+        {label('Server Address')}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <input type="text" placeholder="192.168.1.50"
+            value={ip} onChange={handleIpChange} onKeyDown={handleIpKeyDown}
+            style={{ ...inputStyle, flex: 1 }}
+          />
+          <input ref={portRef} type="text" placeholder="8096"
+            value={port} onChange={(e) => setPort(e.target.value)}
+            style={{ ...inputStyle, width: '80px', textAlign: 'center' }}
+          />
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '16px' }}>
+        {label('Username')}
+        <input type="text" placeholder="Your Username"
+          value={username} onChange={(e) => setUsername(e.target.value)}
+          style={{ ...inputStyle, width: '100%' }}
+        />
+      </div>
+
+      <div style={{ marginBottom: '16px' }}>
+        {label('Password')}
+        <input type="password" placeholder="••••••••"
+          value={password} onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
+          style={{ ...inputStyle, width: '100%' }}
+        />
+      </div>
+
+      {status && (
+        <div style={{
+          padding: '10px', borderRadius: '8px', textAlign: 'center',
+          fontSize: '0.88rem', marginBottom: '12px',
+          background: status.ok ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+          color: status.ok ? '#22c55e' : '#ef4444',
+        }}>
+          {status.msg}
+        </div>
+      )}
+
+      <button
+        onClick={handleConnect}
+        disabled={loading}
+        style={{
+          width: '100%', padding: '14px',
+          background: '#a855f7', color: '#fff',
+          fontSize: '1rem', fontWeight: 700,
+          border: 'none', borderRadius: '12px',
+          cursor: loading ? 'not-allowed' : 'pointer',
+          opacity: loading ? 0.5 : 1, marginTop: '8px',
+        }}
+      >
+        {loading ? 'Connecting...' : 'Connect'}
+      </button>
+    </>
+  )
+
   return (
     <div style={{
       width: '100vw', height: '100vh',
@@ -120,78 +197,7 @@ function Connect({ onConnect, onAddServer }) {
         width: '100%', maxWidth: '440px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
       }}>
-        <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '2.8rem', fontWeight: 800, letterSpacing: '-2px', color: '#fff' }}>flacr</span>
-          <span style={{ fontSize: '2.8rem', fontWeight: 800, color: '#a855f7' }}>.</span>
-        </div>
-        <p style={{ textAlign: 'center', color: '#888', fontSize: '0.9rem', marginBottom: '36px' }}>
-          Connect to your Jellyfin server
-        </p>
-
-        <div style={{ marginBottom: '16px' }}>
-          {label('Nickname (optional)')}
-          <input type="text" placeholder="Home Server"
-            value={serverName} onChange={e => setServerName(e.target.value)}
-            style={{ ...inputStyle, width: '100%' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '16px' }}>
-          {label('Server Address')}
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input type="text" placeholder="192.168.1.50"
-              value={ip} onChange={handleIpChange} onKeyDown={handleIpKeyDown}
-              style={{ ...inputStyle, flex: 1 }}
-            />
-            <input ref={portRef} type="text" placeholder="8096"
-              value={port} onChange={(e) => setPort(e.target.value)}
-              style={{ ...inputStyle, width: '80px', textAlign: 'center' }}
-            />
-          </div>
-        </div>
-
-        <div style={{ marginBottom: '16px' }}>
-          {label('Username')}
-          <input type="text" placeholder="Your Username"
-            value={username} onChange={(e) => setUsername(e.target.value)}
-            style={{ ...inputStyle, width: '100%' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '16px' }}>
-          {label('Password')}
-          <input type="password" placeholder="••••••••"
-            value={password} onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
-            style={{ ...inputStyle, width: '100%' }}
-          />
-        </div>
-
-        {status && (
-          <div style={{
-            padding: '10px', borderRadius: '8px', textAlign: 'center',
-            fontSize: '0.88rem', marginBottom: '12px',
-            background: status.ok ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-            color: status.ok ? '#22c55e' : '#ef4444',
-          }}>
-            {status.msg}
-          </div>
-        )}
-
-        <button
-          onClick={handleConnect}
-          disabled={loading}
-          style={{
-            width: '100%', padding: '14px',
-            background: '#a855f7', color: '#fff',
-            fontSize: '1rem', fontWeight: 700,
-            border: 'none', borderRadius: '12px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.5 : 1, marginTop: '8px',
-          }}
-        >
-          {loading ? 'Connecting...' : 'Connect'}
-        </button>
+        {formContents}
       </div>
     </div>
   )

@@ -2,7 +2,7 @@
  * Format a duration in seconds to m:ss
  */
 export function formatSeconds(s) {
-  if (!s || isNaN(s)) return '0:00'
+  if (!s || !isFinite(s) || isNaN(s)) return '0:00'
   const m = Math.floor(s / 60)
   const sec = String(Math.floor(s % 60)).padStart(2, '0')
   return `${m}:${sec}`

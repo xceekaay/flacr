@@ -10,7 +10,7 @@ function getDeviceId() {
 
 function buildAuthHeader(token, deviceId) {
   const id = deviceId || getDeviceId()
-  const base = `MediaBrowser Client="Flacr", Device="Desktop", DeviceId="${id}", Version="0.2.0"`
+  const base = `MediaBrowser Client="flacr.", Device="Desktop", DeviceId="${id}", Version="${__APP_VERSION__}"`
   return token ? `${base}, Token="${token}"` : base
 }
 
@@ -100,8 +100,15 @@ export function imgUrl(session, itemId, size = 48) {
  * The auth token is NOT included in the URL — it is injected as a request
  * header by the main process (see main.js webRequest interceptor).
  */
-export function streamUrl(session, songId) {
-  return `${session.serverUrl}/Audio/${songId}/stream?static=true`
+
+const QUALITY_BITRATE = { high: 256000, medium: 192000, low: 128000 }
+
+export function streamUrl(session, songId, quality = 'original') {
+  if (!quality || quality === 'original' || quality === 'auto') {
+    return `${session.serverUrl}/Audio/${songId}/stream?static=true`
+  }
+  const bitrate = QUALITY_BITRATE[quality] ?? 256000
+  return `${session.serverUrl}/Audio/${songId}/stream?audioCodec=aac&audioBitRate=${bitrate}&static=false`
 }
 
 // ---------------------------------------------------------------------------
@@ -383,6 +390,13 @@ export async function reportPlaybackStopped(session, song, positionTicks) {
     method: 'POST',
     headers: { ...authHeaders(session), 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
+  }).catch(() => {})
+}
+
+export async function logoutSession(session) {
+  return fetch(`${session.serverUrl}/Sessions/Logout`, {
+    method: 'POST',
+    headers: authHeaders(session),
   }).catch(() => {})
 }
 

@@ -14,8 +14,8 @@ function applyTheme(isDark) {
 }
 
 function App() {
-  const [session, setSession] = useState(null)
-  const [checked, setChecked] = useState(false)
+  const [session, setSession]   = useState(null)
+  const [checked, setChecked]   = useState(false)
   const { updateChecker, autoUpdate } = useSettingsStore()
 
   // ── System theme detection ───────────────────────────────────────────────
@@ -76,8 +76,8 @@ function App() {
     return session ? <MiniPlayer session={session}/> : null
   }
 
-  if (!session) return <Connect onConnect={setSession}/>
-  return <Library session={session}/>
+  if (!session) return <Connect onConnect={(sess) => { setSession(sess) }}/>
+  return <Library key={session?.serverUrl} session={session}/>
 }
 
 export default App

@@ -41,12 +41,12 @@ function getReplayGainVolume(song, userVolume) {
   return Math.min(1, userVolume * Math.pow(10, gain / 20))
 }
 
-function Player({ session, onOpenNowPlaying, showQueue, onToggleQueue }) {
+function Player({ session, onOpenNowPlaying, showQueue, onToggleQueue, showToast }) {
   const { queue, currentIndex, isPlaying, shuffle, repeat, volume, restartToken,
     togglePlay, setIsPlaying, setVolume, toggleShuffle, cycleRepeat,
     next, prev, sleepTimer, tickSleepTimer, setCurrentIndex } = usePlayerStore()
   const { progress, duration, setProgress, setDuration } = useProgressStore()
-  const { normalize, crossfade, gapless, eq } = useSettingsStore()
+  const { normalize, crossfade, gapless, eq, streamQuality } = useSettingsStore()
 
   const audioA          = useRef(null)
   const audioB          = useRef(null)
@@ -64,9 +64,13 @@ function Player({ session, onOpenNowPlaying, showQueue, onToggleQueue }) {
   const cfNextIndexRef   = useRef(-1)
   const cfCompletingRef  = useRef(false)
 
-  const effectiveVolumeRef = useRef(volume)
-  const crossfadeRef       = useRef(crossfade)
-  const sessionRef         = useRef(session)
+  const effectiveVolumeRef  = useRef(volume)
+  const crossfadeRef        = useRef(crossfade)
+  const sessionRef          = useRef(session)
+  const streamQualityRef    = useRef(streamQuality)
+  const effectiveQualityRef = useRef(streamQuality === 'auto' ? 'original' : streamQuality)
+  const stallCountRef       = useRef(0)
+  const stallWindowRef      = useRef(null)
   const audioCtxRef        = useRef(null)
   const filtersRef         = useRef([])
 
@@ -113,6 +117,12 @@ function Player({ session, onOpenNowPlaying, showQueue, onToggleQueue }) {
   useEffect(() => { effectiveVolumeRef.current = effectiveVolume }, [effectiveVolume])
   useEffect(() => { crossfadeRef.current = crossfade }, [crossfade])
   useEffect(() => { sessionRef.current = session }, [session])
+  useEffect(() => {
+    streamQualityRef.current = streamQuality
+    if (streamQuality !== 'auto') {
+      effectiveQualityRef.current = streamQuality
+    }
+  }, [streamQuality])
 
   useEffect(() => {
     // Guard: createMediaElementSource can only be called once per element.
@@ -171,6 +181,44 @@ function Player({ session, onOpenNowPlaying, showQueue, onToggleQueue }) {
     if (p) { p.pause(); p.src = ''; p.dataset.songId = '' }
   }
 
+  const handleAutoStall = useCallback(() => {
+    if (streamQualityRef.current !== 'auto') return
+    stallCountRef.current++
+    if (!stallWindowRef.current) {
+      stallWindowRef.current = setTimeout(() => {
+        stallCountRef.current = 0
+        stallWindowRef.current = null
+      }, 10000)
+    }
+    if (stallCountRef.current < 3) return
+
+    const order = ['original', 'high', 'medium', 'low']
+    const curIdx = order.indexOf(effectiveQualityRef.current)
+    if (curIdx === order.length - 1) {
+      showToast?.({ message: 'Still buffering — check your connection', type: 'warning' })
+      return
+    }
+
+    const nextQ = order[curIdx + 1]
+    effectiveQualityRef.current = nextQ
+    stallCountRef.current = 0
+    clearTimeout(stallWindowRef.current)
+    stallWindowRef.current = null
+
+    const active = getActive()
+    const currentSong = usePlayerStore.getState().queue[usePlayerStore.getState().currentIndex]
+    if (active && currentSong) {
+      const t = active.currentTime
+      active.src = streamUrl(sessionRef.current, currentSong.Id, nextQ)
+      active.dataset.songId = currentSong.Id
+      if (t > 0) active.currentTime = t
+      if (usePlayerStore.getState().isPlaying) active.play().catch(console.error)
+    }
+
+    const labels = { high: 'High (320k)', medium: 'Medium (192k)', low: 'Low (128k)' }
+    showToast?.({ message: `Quality reduced to ${labels[nextQ]} for smoother playback`, type: 'info' })
+  }, [showToast])
+
   // ── Sleep timer ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!sleepTimer) return
@@ -228,6 +276,23 @@ function Player({ session, onOpenNowPlaying, showQueue, onToggleQueue }) {
       startTimestamp: Date.now() - Math.round(useProgressStore.getState().progress * 1000),
     })
   }, [song, isPlaying, discordRPC])
+
+  // ── Stall listener — auto-downgrade quality ───────────────────────────────
+  useEffect(() => {
+    const a = audioA.current
+    const b = audioB.current
+    if (!a || !b) return
+
+    const onStall = () => { handleAutoStall() }
+
+    a.addEventListener('stalled', onStall)
+    b.addEventListener('stalled', onStall)
+
+    return () => {
+      a.removeEventListener('stalled', onStall)
+      b.removeEventListener('stalled', onStall)
+    }
+  }, [handleAutoStall])
 
   // ── External seek + volume (from fullscreen player) ──────────────────────
   useEffect(() => {
@@ -300,15 +365,20 @@ function Player({ session, onOpenNowPlaying, showQueue, onToggleQueue }) {
       lastCtRef.current        = 0
       lastReportRef.current    = Date.now()
     } else {
-      if (passive) { 
-        passive.pause(); passive.src = ''; passive.dataset.songId = '' 
+      if (passive) {
+        passive.pause(); passive.src = ''; passive.dataset.songId = ''
         // Report stop for previous song if it was actually playing
         if (loadedSongIdRef.current) {
           const oldSong = queue.find(s => s.Id === loadedSongIdRef.current)
           if (oldSong) reportPlaybackStopped(session, oldSong, Math.round(active.currentTime * 10_000_000))
         }
       }
-      active.src = streamUrl(session, song.Id)
+      // Reset quality tracking for the new song
+      effectiveQualityRef.current = streamQualityRef.current === 'auto' ? 'original' : streamQualityRef.current
+      stallCountRef.current = 0
+      clearTimeout(stallWindowRef.current)
+      stallWindowRef.current = null
+      active.src = streamUrl(session, song.Id, effectiveQualityRef.current)
       active.dataset.songId = song.Id
       loadedSongIdRef.current = song.Id
       active.volume = effectiveVolume
@@ -361,7 +431,7 @@ function Player({ session, onOpenNowPlaying, showQueue, onToggleQueue }) {
     if (!nextS || !duration || progress < duration - 10) return
     const passive = getPassive()
     if (!passive || passive.dataset.songId === nextS.Id) return
-    passive.src = streamUrl(session, nextS.Id)
+    passive.src = streamUrl(session, nextS.Id, effectiveQualityRef.current)
     passive.dataset.songId = nextS.Id
     passive.volume = 0
     passive.load()
@@ -498,7 +568,7 @@ function Player({ session, onOpenNowPlaying, showQueue, onToggleQueue }) {
     cfNextVolRef.current = nextEffVol
 
     if (passive.dataset.songId !== nextS.Id) {
-      passive.src = streamUrl(sessionRef.current, nextS.Id)
+      passive.src = streamUrl(sessionRef.current, nextS.Id, effectiveQualityRef.current)
       passive.dataset.songId = nextS.Id
       passive.volume = 0
       passive.load()
@@ -673,7 +743,15 @@ function Player({ session, onOpenNowPlaying, showQueue, onToggleQueue }) {
 
   const handleLoadedMetadata = useCallback((e) => {
     if (e.target !== getActive()) return
-    setDuration(e.target.duration)
+    const dur = e.target.duration
+    if (isFinite(dur)) {
+      setDuration(dur)
+    } else {
+      // Transcoded streams (static=false) report Infinity — fall back to Jellyfin metadata
+      const { queue, currentIndex } = usePlayerStore.getState()
+      const s = queue[currentIndex]
+      if (s?.RunTimeTicks) setDuration(s.RunTimeTicks / 10_000_000)
+    }
   }, [])
 
   const handleEnded = useCallback((e) => {
@@ -714,6 +792,9 @@ function Player({ session, onOpenNowPlaying, showQueue, onToggleQueue }) {
     if (cfCompletingRef.current) return
     if (e.target !== getActive()) return
     setIsPlaying(false)
+    const { queue, currentIndex } = usePlayerStore.getState()
+    const s = queue[currentIndex]
+    if (s) reportPlaybackProgress(sessionRef.current, s, Math.round(e.target.currentTime * 10_000_000), true)
   }, [setIsPlaying])
 
   // ── onPlay handler ────────────────────────────────────────────────────────
@@ -721,6 +802,9 @@ function Player({ session, onOpenNowPlaying, showQueue, onToggleQueue }) {
     if (e.target !== getActive()) return
     audioCtxRef.current?.resume().catch(() => {})
     setIsPlaying(true)
+    const { queue, currentIndex } = usePlayerStore.getState()
+    const s = queue[currentIndex]
+    if (s) reportPlaybackProgress(sessionRef.current, s, Math.round(e.target.currentTime * 10_000_000), false)
   }, [setIsPlaying])
 
   const progressPct  = duration ? (progress / duration) * 100 : 0

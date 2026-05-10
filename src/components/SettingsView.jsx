@@ -25,6 +25,14 @@ const SLEEP_OPTIONS = [
   { value: '120',  label: '120 minutes' },
 ]
 
+const STREAM_QUALITY_OPTIONS = [
+  { value: 'auto',     label: 'Auto' },
+  { value: 'original', label: 'Original' },
+  { value: 'high',     label: 'High' },
+  { value: 'medium',   label: 'Medium' },
+  { value: 'low',      label: 'Low' },
+]
+
 const EQ_BANDS = ['32Hz','64Hz','125Hz','250Hz','500Hz','1kHz','2kHz','4kHz','8kHz','16kHz']
 
 const EQ_PRESETS = {
@@ -407,7 +415,7 @@ const ServerIcon = () => (
 )
 
 export function SettingsView({ servers, onSwitchServer, onRemoveServer, onRenameServer, onAddServer, switchingServerId }) {
-  const { normalize, crossfade, gapless, accentColor, animations, closeBehavior, discordRPC, updateChecker, autoUpdate, eq, set } = useSettingsStore()
+  const { normalize, crossfade, gapless, accentColor, animations, closeBehavior, discordRPC, updateChecker, autoUpdate, eq, streamQuality, set } = useSettingsStore()
   const { setSleepTimer, sleepTimer } = usePlayerStore()
   const [appVersion, setAppVersion] = useState(null)
   const [launchAtStartup, setLaunchAtStartup] = useState(false)
@@ -653,6 +661,11 @@ export function SettingsView({ servers, onSwitchServer, onRemoveServer, onRename
               </div>
             )}
           </div>
+          <div style={{ marginTop:'20px', paddingBottom:'20px', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ fontSize:'1rem', color:'#fff', fontWeight:500, marginBottom:'4px' }}>Streaming Quality</div>
+            <div style={{ fontSize:'0.9rem', color:'#888', marginBottom:'14px' }}>Auto reduces quality if buffering is detected.</div>
+            <CustomSelect value={streamQuality} options={STREAM_QUALITY_OPTIONS} onChange={v => set('streamQuality', v)}/>
+          </div>
         </>
       </CollapsibleSection>
 
@@ -674,7 +687,7 @@ export function SettingsView({ servers, onSwitchServer, onRemoveServer, onRename
               onChange={preset => { if (preset === 'custom') return; set('eq', { ...eq, preset, gains: [...EQ_PRESETS[preset]] }) }}
             />
           </div>
-          <div style={{ opacity: eq.enabled ? 1 : 0.4, pointerEvents: eq.enabled ? 'auto' : 'none' }}>
+          <div style={{ opacity: eq.enabled ? 1 : 0.4, pointerEvents: eq.enabled ? 'auto' : 'none', paddingBottom:'20px', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
             <div style={{ fontSize:'1rem', color:'#fff', fontWeight:500, marginBottom:'16px' }}>Bands</div>
             <div style={{ display:'flex', gap:'4px', alignItems:'flex-end', justifyContent:'space-between' }}>
               {EQ_BANDS.map((label, i) => (
